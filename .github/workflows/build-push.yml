@@ -23,6 +23,6 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ./docker
           push: true
           tags: ghcr.io/cesarbruschetta/docker-open-url:latest
