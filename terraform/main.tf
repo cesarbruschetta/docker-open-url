@@ -29,13 +29,13 @@ provider "aws" {
 module "ecs" {
   source = "terraform-aws-modules/ecs/aws"
 
-  cluster_name = "open-url"
+  cluster_name = "${var.env}-${var.application}"
 
   cluster_configuration = {
     execute_command_configuration = {
       logging = "OVERRIDE"
       log_configuration = {
-        cloud_watch_log_group_name = "/aws/ecs/open-url"
+        cloud_watch_log_group_name = "ecs/${var.env}/${var.application}"
       }
     }
   }
@@ -43,12 +43,12 @@ module "ecs" {
   fargate_capacity_providers = {
     FARGATE = {
       default_capacity_provider_strategy = {
-        weight = 50
+        weight = 20
       }
     }
     FARGATE_SPOT = {
       default_capacity_provider_strategy = {
-        weight = 50
+        weight = 80
       }
     }
   }
@@ -66,4 +66,6 @@ module "ecs_service" {
   region         = var.region
   ecr_repository = var.ecr_repository_name
   account_id     = var.account_id
+  env            = var.env
+  application    = var.application
 }

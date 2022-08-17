@@ -15,43 +15,92 @@ data "aws_ecr_image" "docker_image" {
 }
 
 
-resource "aws_cloudwatch_log_group" "dev_open_url" {
-  name              = "dev_open_url"
+resource "aws_cloudwatch_log_group" "logger" {
+  name              = "${var.env}-${var.application}"
   retention_in_days = 1
-}
 
-resource "aws_ecs_task_definition" "dev_open_url" {
-  family = "dev_open_url"
-
-  container_definitions = <<EOF
-[
-  {
-    "name": "dev_open_url",
-    "image": "${local.aws_ecr_repository_url}:${local.ecr_image_tag}",
-    "cpu": 1,
-    "memory": 256,
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-region": "${var.region}",
-        "awslogs-group": "${aws_cloudwatch_log_group.dev_open_url.name}",
-        "awslogs-stream-prefix": "${local.ecr_image_tag}"
-      }
-    }
+  tags = {
+    Environment = var.env
   }
-]
-EOF
 }
 
-resource "aws_ecs_service" "dev_open_url" {
-  name            = "dev_open_url"
+resource "aws_ecs_task_definition" "task" {
+  family                   = "${var.env}-${var.application}"
+  requires_compatibilities = ["FARGATE"]
+
+  network_mode = "awsvpc"
+  cpu          = 1024
+  memory       = 2048
+
+  execution_role_arn = aws_iam_role.role.arn
+
+  container_definitions = jsonencode([
+    {
+      name        = "${var.env}-${var.application}",
+      image       = "${local.aws_ecr_repository_url}:${local.ecr_image_tag}",
+      cpu         = 512,
+      memory      = 256,
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-region        = "${var.region}",
+          awslogs-group         = "${aws_cloudwatch_log_group.logger.name}",
+          awslogs-stream-prefix = "${local.ecr_image_tag}"
+        }
+      }
+      environment = [{
+        name = "FIREFOX_URL", 
+        value = "VARVAL",
+      }],
+      portMappings = [{
+        containerPort = 8088
+        hostPort      = 8088
+      }]
+    }
+  ])
+
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
+  tags = {
+    Environment = var.env
+  }
+
+}
+
+resource "aws_ecs_service" "service" {
+  name            = "${var.env}-${var.application}"
   cluster         = var.cluster_id
-  task_definition = aws_ecs_task_definition.dev_open_url.arn
+  task_definition = aws_ecs_task_definition.task.arn
+  launch_type     = "FARGATE"
+  propagate_tags  = "TASK_DEFINITION"
 
   desired_count = 1
+  force_new_deployment = true
 
   deployment_maximum_percent         = 100
   deployment_minimum_healthy_percent = 0
+
+  network_configuration {
+    subnets = [
+      "subnet-0a3d23394fd13f8d8",
+      "subnet-05ea58523757714c4",
+      "subnet-0178cb172b50845e5",
+      "subnet-0f13b9e3afab8db1c",
+      "subnet-045d4346912077e4a",
+      "subnet-0e51ac51c36cebaa7",
+    ]
+    security_groups = [
+      "sg-0c9a0b5cc922fb799",
+    ]
+    assign_public_ip = false
+  }
+
+  tags = {
+    Environment = var.env
+  }
 }
 
 
