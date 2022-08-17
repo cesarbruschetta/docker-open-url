@@ -1,10 +1,10 @@
 
 variable "account_id" {
-  default = "643626749185"
+  type = string
 }
 
 variable "region" {
-  default = "us-east-1"
+  type = string
 }
 
 variable "env" {
