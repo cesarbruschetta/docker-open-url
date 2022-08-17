@@ -33,11 +33,11 @@ resource "digitalocean_kubernetes_cluster" "k8s_cluster" {
   # This default node pool is mandatory
   node_pool {
     name       = "default-pool-${var.env}-${var.application}"
-    size       = "m-4vcpu-32gb" # list available options with `doctl compute size list`
+    size       = "s-4vcpu-8gb" # list available options with `doctl compute size list`
     auto_scale = true
     node_count = 2
     min_nodes = 1
-    max_nodes = 10
+    max_nodes = 20
     tags       = ["node-pool-${var.env}"]
   }
 
