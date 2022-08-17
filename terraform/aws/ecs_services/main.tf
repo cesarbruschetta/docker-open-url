@@ -50,7 +50,7 @@ resource "aws_ecs_task_definition" "task" {
       }
       environment = [{
         name = "FIREFOX_URL", 
-        value = "https://www.youtube.com/watch?v=cfXPlkIVs5k",
+        value = "",
       }],
       portMappings = [{
         containerPort = 8088
